@@ -1,0 +1,11 @@
+aws dynamodb create-table \
+    --table-name RestricaoCVM \
+    --attribute-definitions \
+        AttributeName=IdEq3,AttributeType=S \
+        AttributeName=DataVigencia,AttributeType=S \
+    --key-schema \
+        AttributeName=IdEq3,KeyType=HASH \
+        AttributeName=DataVigencia,KeyType=RANGE \
+    --provisioned-throughput \
+        ReadCapacityUnits=5,WriteCapacityUnits=5 \
+    --table-class STANDARD
