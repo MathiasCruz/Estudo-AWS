@@ -5,6 +5,12 @@ using System.Net.Http;
 using System.Text.Json;
 using Amazon.Lambda.Core;
 using Amazon.Lambda.APIGatewayEvents;
+using Amazon.DynamoDBv2.DocumentModel;
+using Amazon.DynamoDBv2.Model;
+using System;
+using Amazon.DynamoDBv2;
+using Amazon.Runtime;
+using Amazon;
 
 // Assembly attribute to enable the Lambda function's JSON input to be converted into a .NET class.
 [assembly: LambdaSerializer(typeof(Amazon.Lambda.Serialization.SystemTextJson.DefaultLambdaJsonSerializer))]
@@ -26,15 +32,31 @@ namespace HelloWorld
 
             return msg.Replace("\n", "");
         }
-        private static void CallTableDescription()
+        public static async Task CallTableDescriptionAsync()
         {
-            var repo = new Repository();
-            repo.GetTableInformation();
+            var clientConfig = new AmazonDynamoDBConfig();
+            clientConfig.RegionEndpoint = RegionEndpoint.SAEast1;
+            var client = new AmazonDynamoDBClient(clientConfig);
+            Console.WriteLine("\n*** Retrieving table information ***");
+            var request = new DescribeTableRequest
+            {
+                TableName = "RestricaoCVM"
+            };
+
+            var response = await client.DescribeTableAsync(request);
+            TableDescription description = response.Table;
+            Console.WriteLine("Name: {0}", description.TableName);
+            Console.WriteLine("# of items: {0}", description.ItemCount);
+            Console.WriteLine("Provision Throughput (reads/sec): {0}",
+                      description.ProvisionedThroughput.ReadCapacityUnits);
+            Console.WriteLine("Provision Throughput (writes/sec): {0}",
+                      description.ProvisionedThroughput.WriteCapacityUnits);
         }
+
 
         public async Task<APIGatewayProxyResponse> FunctionHandler(APIGatewayProxyRequest apigProxyEvent, ILambdaContext context)
         {
-            CallTableDescription();
+            await CallTableDescriptionAsync();
             var location = await GetCallingIP();
             var body = new Dictionary<string, string>
             {
@@ -49,5 +71,7 @@ namespace HelloWorld
                 Headers = new Dictionary<string, string> { { "Content-Type", "application/json" } }
             };
         }
+
     }
 }
+
